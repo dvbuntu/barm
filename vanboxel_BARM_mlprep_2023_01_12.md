@@ -29,6 +29,8 @@ header-includes:
     - \setbeamercolor*{frametitle}{bg=branch, fg = leaf}
     - \setbeamercolor*{frametitle}{bg=tan, fg = leaf}
     - \setbeamercolor*{normal text}{bg=white, fg = black}
+    - \usepackage{textpos}
+    - \addtobeamertemplate{frametitle}{}{\begin{textblock*}{100mm}(.95\textwidth,-0.9cm)\includegraphics[height=0.9cm,width=0.9cm]{figs/cute_ua.png}\end{textblock*}}
 ...
 
 ## Reintroduction
