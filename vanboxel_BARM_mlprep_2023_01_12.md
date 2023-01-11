@@ -103,6 +103,17 @@ Bayesian Additive Regression Models, a generalization of BART [@chipman2010bart]
 * Inclusion of additional data sets (larger scale or demonstrating some capability/problem with BARM).
 * Revision of testing metrics/procedure
 
+# Administrivia
+
+## Scheduling
+
+* 27 Jan 2023, 10-11am, MATH402, All-committee meeting
+* 31 Mar 2023, 1pm, MATH402, Applied Math Student Brown Bag (comps dry run)
+* Early Apr 2023, TBD, TBD, Company Tech Talk (another dry run)
+* 21 Apr 2023, 9am-12pm, MATH402, Comprehensive Exam (tentative)
+* Mid Autumn 2023, All-committee meeting 2
+* Late Spring/Summer 2024, Defense?
+
 ## Links
 
 Email: vanboxel@math.arizona.edu
