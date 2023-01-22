@@ -33,6 +33,8 @@ header-includes:
     - \addtobeamertemplate{frametitle}{}{\begin{textblock*}{100mm}(.95\textwidth,-0.9cm)\includegraphics[height=0.9cm,width=0.9cm]{figs/cute_ua.png}\end{textblock*}}
 ...
 
+# Background
+
 ## Reintroduction
 
 ::: columns
@@ -46,6 +48,8 @@ header-includes:
 * Previous 10 year career in data science and statistics
 * Part-time data scientist and machine learning engineer in Tucson
 * Other interests: RPGs, LGBTQ+ representation, birding
+
+![Festive Danielle](figs/danielle_festive.jpg){ height=45% }
 
 ::::
 :::: {.column width=30%}
@@ -63,6 +67,31 @@ header-includes:
 * *Implementation*: Adapt BART procedure to use MCMC to sample from space of neural network *models* conditioned on error.
 * *Related Work*: Related Regression Techniques [@chipman2010bart; @breiman2001random], MCMC/Gibbs' [@metropolis1953equation; @geman1984stochastic]
 * *Data*: UCI Benchmark regression problems [@dua2017uci], isotope measurement problem, [@roman2022bayclump]
+
+## Current State of Research
+
+::: columns
+
+:::: {.column width=70%}
+
+* Started in Spring 2022 for Monte Carlo (MATH577) class project
+* Revised Summer 2022 with additional data
+* Presented at Arizona-Los Alamos Days, Los Alamos, NM, August 2022
+* Presented at AMS Central Section Meeting, El Paso, TX, September 2022
+* Poster at GIDP Showcase, Tucson, AZ, December 2022
+* Seeking venue for peer-reviewed publication
+* Considering grant to fund additional research
+
+::::
+:::: {.column width=30%}
+
+![](figs/ams_logo.gif){ height=30% }
+
+![](figs/uala_logo.png){ height=40% }
+
+::::
+:::
+
 
 # Motivation
 
@@ -458,19 +487,38 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 ## Comps Goals: Data Science and Implementation
 
 * Refactor BARN code into Python module with arbitrary base model.
+* Write practical tutorial with small example for users.
 * (stretch) Develop R library as well.
 * (stretch) Improve speed by order of magnitude by cleverly implementing ensemble of NNs.
 * Inclusion of additional data sets (larger scale or demonstrating some capability/problem with BARM).
-* Revision of testing metrics/procedure
+* Expansion of testing metrics/procedure
 
-## Scheduling
+## Task Schedule
 
-* 27 Jan 2023, 10-11am, MATH402, All-committee meeting
-* 31 Mar 2023, 1pm, MATH402, Applied Math Student Brown Bag (comps dry run)
-* Early Apr 2023, TBD, TBD, Company Tech Talk (another dry run)
-* 21 Apr 2023, 9am-12pm, MATH402, Comprehensive Exam (tentative)
-* Mid Autumn 2023, All-committee meeting 2
-* Late Spring/Summer 2024, Defense?
+![](figs/research_schedule_rot.pdf){ height=140% }
+
+## Deliverable Schedule
+
+| Deliverable | Date |
+|:----------|------:|
+| Initial Presentation | 27 Jan 2023 |
+| Comps Paper Progress | 17 Mar 2023 |
+| Comps Final Paper | 7 Apr 2023 |
+| Professional Resume | 7 Apr 2023 |
+| Personal Website | 7 Apr 2023 |
+| Comps Final Presentation | 21 Apr 2023 |
+
+
+## Presentation Schedule
+
+| Presentation | Date | Time | Place |
+|:----------|------:|---:|---:|
+| All-committee meeting | 27 Jan 2023| 10-11am| MATH402| 
+| Applied Math Student Brown Bag (comps dry run) | 31 Mar 2023| 1pm| MATH402| 
+| Company Tech Talk (another dry run) | TBD Apr 2023| TBD| TBD| 
+| Comprehensive Exam (tentative) | 21 Apr 2023| 9am-12pm| MATH402| 
+| All-committee meeting 2 | Autumn 2023| | |
+| Defense? | Mid 2024| | |
 
 ## Contact
 
