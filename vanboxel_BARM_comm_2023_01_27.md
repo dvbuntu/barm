@@ -61,7 +61,7 @@ header-includes:
 ::::
 :::
 
-## High Level Overview
+## BARM High Level Overview
 
 * *Concept*: Find a method for regression models that is broadly applicable and automatically designs an architecture.
 * *Implementation*: Adapt BART procedure to use MCMC to sample from space of neural network *models* conditioned on error.
@@ -80,7 +80,7 @@ header-includes:
 * Presented at AMS Central Section Meeting, El Paso, TX, September 2022
 * Poster at GIDP Showcase, Tucson, AZ, December 2022
 * Seeking venue for peer-reviewed publication
-* Considering grant to fund additional research
+* Exploring grant to fund additional research
 
 ::::
 :::: {.column width=30%}
@@ -128,11 +128,14 @@ header-includes:
 
 ![BART outperforms NRF and related methods [@biau2019neural]](figs/nrf_all.png){ height=80% }
 
-## Hypothesis
+## BART Motivation [@chipman2010bart]
 
-Rather than try to change BART into a Neural Network, is it useful to train an ensemble of Neural Networks with a BART-like procedure?
+* Bayesian Additive Regression Trees
+* Sum-of-trees ensemble model, similar to Random Forest [@breiman2001random] in structure
+* Introduce prior on tree size to enforce ensemble of weak learners
+* MCMC update procedure enables inference on model prediction and variable importance
+* *Comment:* BART paper strongly favors a sum-of-*trees* model without much mention of sum-of-"other method" alternatives
 
-Can this address the neural network architecture search problem [@idrissi2016genetic] in a rigorous way?
 
 ## Model Ensembling [@hastie2009elements]
 
@@ -176,17 +179,17 @@ Can this address the neural network architecture search problem [@idrissi2016gen
 
 $$ A(x, x') = min(1, \frac{q(x', x) P(x')}{q(x, x') P(x)})$$
 
-## BART Basics [@chipman2010bart]
+## BART Basics
 
 ::: columns
 
 :::: {.column width=30%}
 
-* Bayesian Additive Regression Trees
 * Sample prior distribution on tree parameters (e.g. depth)
 * Trees *sum* to result (not average!)
 * Train tree $i$ on $Y-\sum_{k \neq i} T_k$, residual of other trees
 * MCMC to iteratively mutate trees to expected distribution
+* Predict output by averaging over $K$ successive MCMC ensembles
 
 ::::
 :::: {.column width=70%}
@@ -226,6 +229,14 @@ $$ \alpha(T_j, T_j') = min(1, \frac{q(T_j', T_j) P(R_k|X,T_j') P(T_j')}{q(T_j, T
 * $P(R_k|X,T_j')$ - Probability of target residual, $R_k$, given data, $X$, and proposed new tree, $T_j'$, a.k.a. the error probability
 * $P(T_j')$ - Prior probability of proposed tree, $T_j'$, based on tree size
 * $P(R_k|X,T_j') P(T_j')$ - Posterior probability of proposed tree given the data and model fit
+
+## Hypothesis
+
+What if we modify BART to use an ensemble of small Neural Networks instead of decision trees?  Possible benefits:
+
+1. NNs, having been shown to produce highly accurate models in some situations [@szegedy2013ipn], may when ensembled outperform BART.
+2. The BART MCMC procedure may rigorously address the neural network architecture search problem [@idrissi2016genetic] with Bayesian posteriors.
+3. By carefully assigning priors to model size parameters, we can adapt computational effort to problem *difficulty* rather than number of data points or features.
 
 ## Neural Networks
 
@@ -442,6 +453,9 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 
 :::
 
+## Computation Time (still exploratory)
+
+![BARN computation time appears to scale with *difficulty* not just data size](figs/time_results.png){ height=80% }
 
 # Discussion
 
@@ -457,11 +471,6 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 	* May mitigate by encoding ensemble as a big NN (zeroing cross model connection weights)
 	* Also try GPU/TensorFlow implementation for speed
 
-## Computation Time
-
-![BARN is slow even on small problems](figs/time_results.png){ height=80% }
-
-
 ## Acknowledgements
 
 * Cristian Rom${\'a}$n Palacios - additional data set and ongoing collaboration
@@ -472,7 +481,7 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 
 ## Comps Goals: Math and Machine Learning
  
-* More rigorous formulation of machine learning model: Bayesian posterior and NN optimization
+* More rigorous formulation of machine learning model: Bayesian posterior, NN optimization, and inference usage
 * Better motivation for BARM (automatic architecture search, broad applicability, more background research needed)
 * Ensure understanding of inspirational BART paper (background and MCMC)
 * Exploration and guidance for setting of hyperparameters

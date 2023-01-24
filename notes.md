@@ -7,10 +7,27 @@ She advised focusing on mathematical formulation (especially Bayesian method) ra
 1. Bayesian posterior (i.e. error likelihood times prior prob, but more explicit)
 2. Loss function for optimization portion (i.e. NN training)
 
-Also, bear in mind that I should better motivate *why* I'm taking this new ML approach.  This should emphasize automatic architecture search as well as the generalizability of the method (i.e. works on a variety of data problems).
+Also, bear in mind that I should better motivate *why* I'm taking this new ML approach.  This should emphasize automatic architecture search as well as the generalizability of the method (i.e. works on a variety of data problems or running as initial baselining).
 
 Another important avenue of research is exploring guidance on how to change the hyperparameters.  Things like the transition probability, prior distribution (params and dist itself), and number of models in the ensemble.  At a minimum, I should explore how changing them changes the results of the analysis.
 
 Other topics discussed were possibility of using Gelman-Rubin stat for error analysis, and generally updating the paper to use a more explicit mathematical style.
 
 Goal for 26 Jan 2023: Formalize above goals as part of all-committee meeting dry run.
+
+# 19 Jan 2023
+
+Meet with Cristian
+
+* Include schedule of tasks in presentation to committee next week
+* More test metrics (other than RMSE, maybe focus on a single data set this way)
+* Why use BARN?  Work on motivation for what it's good at/what problem it addresses
+* Include a small tutorial with the library component
+
+Cristian said he would look for data for me.
+
+# 23 Jan 2023
+
+Cristian suggested some updates to my presentation.
+
+Key observation: I've been misusing/misreading BART.  The inference (i.e. predicted value) really should be the average of N iterations of the MCMC procedure, not just "last/best ensemble we stopped on".  See equation 18 of BART paper.  I've been using $K = 1$.  Having many observations also allows us to see some distribution on the predicted result (not clear how to distinguish error on specific prediction vs error on expected result for this construction).
