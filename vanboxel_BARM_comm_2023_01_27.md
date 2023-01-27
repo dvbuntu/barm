@@ -1,6 +1,6 @@
 ---
-title: Brewing a Better Model with BARM
-subtitle: Bayesian Additive Regression *Models*
+title: Brewing a Better Model with BARN
+subtitle: Bayesian Additive Regression ~~Models~~ Networks
 author:
 - Danielle Van Boxel
 date: 27 Jan 2023
@@ -61,7 +61,7 @@ header-includes:
 ::::
 :::
 
-## BARM High Level Overview
+## BARN High Level Overview
 
 * *Concept*: Find a method for regression models that is broadly applicable and automatically designs an architecture.
 * *Implementation*: Adapt BART procedure to use MCMC to sample from space of neural network *models* conditioned on error.
@@ -156,6 +156,27 @@ header-includes:
 ::::
 :::
 
+## Ensemble of Decision Trees: Random Forests [@breiman2001random]
+
+::: columns
+
+:::: {.column width=30%}
+
+* Sample data points with replacement
+* Each tree gets different sampling, build with CART
+* Measure error of tree by how well it performs on unseen data (Out Of Bag error)
+* Individual trees are unstable, but averaged are more general
+* Overall performance tends to improve as well
+
+::::
+:::: {.column width=70%}
+
+![Multiple trees trained with different data vote](figs/pres_rf.png){ height=77% }
+
+::::
+:::
+
+
 ## Aside: Markov Chain Monte Carlo
 
 ::: columns
@@ -237,6 +258,8 @@ What if we modify BART to use an ensemble of small Neural Networks instead of de
 1. NNs, having been shown to produce highly accurate models in some situations [@szegedy2013ipn], may when ensembled outperform BART.
 2. The BART MCMC procedure may rigorously address the neural network architecture search problem [@idrissi2016genetic] with Bayesian posteriors.
 3. By carefully assigning priors to model size parameters, we can adapt computational effort to problem *difficulty* rather than number of data points or features.
+
+Aside: Can this BART-like procedure improve models other than trees and NNs?
 
 ## Neural Networks
 
@@ -435,7 +458,7 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 
 ## Graphic Accuracy
 
-![BARN results always better than or comparable to previous methods](figs/pres_results.png){ height=80% }
+![BARN results on test data always better than or comparable to previous methods](figs/pres_results.png){ height=80% }
 
 ## Isotope Dataset Comparison
 
@@ -482,16 +505,16 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 ## Comps Goals: Math and Machine Learning
  
 * More rigorous formulation of machine learning model: Bayesian posterior, NN optimization, and inference usage
-* Better motivation for BARM (automatic architecture search, broad applicability, more background research needed)
+* Better motivation for BARN (automatic architecture search, broad applicability, more background research needed)
 * Ensure understanding of inspirational BART paper (background and MCMC)
 * Exploration and guidance for setting of hyperparameters
-* (stretch) Explore convergence properties/error analysis of BARM
+* (stretch) Explore convergence properties/error analysis of BARN
     * More rigorous computing of convergence metrics for MCMC
     * Any provable properties/conditions for convergence (and speed of convergence)
     * Or non-convergence
     * Explore Gelman-Rubin statistic
-* (stretch) Development of Support Vector Machine for BARM
-* (stretch) Develop more general neural network architecture for BARM to explore
+* (stretch) Development of Support Vector Machine for BARN
+* (stretch) Develop more general neural network architecture for BARN to explore
 
 ## Comps Goals: Data Science and Implementation
 
@@ -499,7 +522,8 @@ $$ P(R_k |X, M_k) = \prod_{i\in  valid} \frac{1}{\sigma \sqrt{\pi}} e^{-\frac{1}
 * Write practical tutorial with small example for users.
 * (stretch) Develop R library as well.
 * (stretch) Improve speed by order of magnitude by cleverly implementing ensemble of NNs.
-* Inclusion of additional data sets (larger scale or demonstrating some capability/problem with BARM).
+* (stretch) Implement classification form of BARN (e.g. Probit model)
+* Inclusion of additional data sets (larger scale or demonstrating some capability/problem with BARN).
 * Expansion of testing metrics/procedure
 
 ## Task Schedule

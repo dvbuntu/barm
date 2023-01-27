@@ -31,3 +31,13 @@ Cristian said he would look for data for me.
 Cristian suggested some updates to my presentation.
 
 Key observation: I've been misusing/misreading BART.  The inference (i.e. predicted value) really should be the average of N iterations of the MCMC procedure, not just "last/best ensemble we stopped on".  See equation 18 of BART paper.  I've been using $K = 1$.  Having many observations also allows us to see some distribution on the predicted result (not clear how to distinguish error on specific prediction vs error on expected result for this construction).
+
+# 26 Jan 2023
+
+Dry run for Cristian and Xueying.
+
+Several helpful comments on content to include in presentation (mostly things I had removed earlier :) )
+
+Also suggestion that for point inference, $K=1$ with BART (or BARN) would be appropriate.  If we want an uncertainty estimate, that's when we can pick a large $K$.  Note that this is model agnostic!  It only depends on the underlying MCMC procedure.
+
+Also, I should consider making many synthetic datasets with known functions + some error.  Then we can see what kinds of functions we can recover.  Ideally, fix the number of data points or number of features (probably former).
