@@ -41,3 +41,11 @@ Several helpful comments on content to include in presentation (mostly things I 
 Also suggestion that for point inference, $K=1$ with BART (or BARN) would be appropriate.  If we want an uncertainty estimate, that's when we can pick a large $K$.  Note that this is model agnostic!  It only depends on the underlying MCMC procedure.
 
 Also, I should consider making many synthetic datasets with known functions + some error.  Then we can see what kinds of functions we can recover.  Ideally, fix the number of data points or number of features (probably former).
+
+# 27 Jan 2023
+
+All committee meeting.  Good feedback around, and agreement that concept is sound and interesting.  Suggestions for focus areas:
+
+* Explore hyperparameter space (e.g. try more models with smaller nets, maybe lambda=2)
+* Explain bayes prior/posterior in more detail
+* Can parallelization improve speed?  Maybe, maybe not.  There is a paper on Parallel BART.
