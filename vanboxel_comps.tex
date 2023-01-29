@@ -29,6 +29,9 @@
 
 \section{Introduction}\label{sec:intro}
 
+% clarify general ML problem y = f(x) + eps
+% motivate what BARN might be good at: broad applicability, architecture search with bayesian stats (look this up), scaling computation with problem difficulty/controlling efforts through priors
+
 Training a cooperative set of weak models (i.e. an ensemble of small models) rather than a single large model has proven itself an effective machine learning technique \cite{dietterich2000ensemble,hansen1990neural,seni2010ensemble,lee2020comparing}.  While Random Forests (RF) \cite{ho1995random,breiman2001random} are one of the most well-known ensemble methods, multiple other approaches have been proposed over the years, \cite[provide some reviews]{way2012advances,dong2020survey}.  One tree-based technique that has outperformed more recent models \cite{biau2019neural} is Bayesian Additive Regression Trees (BART) \cite{chipman2010bart}.  At the same time, neural networks (NNs) have become extremely accurate on a wide variety of tasks \cite{schmidhuber2015deep}, attracting attention from more traditional machine learning methods.
 
 Seeking even better methods, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
@@ -51,11 +54,13 @@ To evaluate the effectiveness of this approach, we apply BARN to a variety of be
 
 \section{Background}\label{sec:background}
 
+%% Use subsections here, as we'll be going into considerable detail
 
 To understand the technique we develop to train an ensemble of neural networks (BARN), we first detail some of the core components to the method.  While many specifics (e.g. full Monte Carlo theory, supporting model assumptions, etc) are beyond the scope of this paper, we intend to convey the necessary basics of machine learning and the M-H algorithm.
 
 While machine learning takes many forms, we focus on neural networks to model regression problems.  For a given data point, we model each target value, $y \in \mathbb{R}$ as some function of independent variables, $x \in \mathbb{R}^n$, such that for each data point $x_i$, we have some error term, $\epsilon_i$, and $y_i$.
 
+% move this to very beginning?
 $$
 y_i = f(x_i) + \epsilon_i
 $$
@@ -102,6 +107,9 @@ $$
 
 Intuitively, if we propose a ``more likely'' state ($P(x') \geq P(x)$) and it's at least as likely to transit from $x'$ to $x$ as the other way ($T(x|x') \geq T(x'|x)$), then we will accept the new state with probability 1.  If either of these conditions fails, there is only some chance (possibly still probability 1), depending on the exact values, of accepting the new state \cite{stepanov2021math}.  Note that if we were reject every less likely state, we would lose detailed balance and no longer have the desired stationary distribution.  After a number of ``burn-in'' iterations, the distribution of states over time converges to the desired $P(x)$.  Note, however, that successive times are necessarily correlated.
 
+% Add some background on Basic bayesian stats here, note that we cancel the P(Y,X) in the acceptance ratio
+
+
 For BART and BARN, however, we sample not from a known distribution, but from the distribution of models that accurately predict our target value (i.e. smaller residuals).  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into two components: 
 
 $$
@@ -114,7 +122,16 @@ $$
 A(M,M') = min(1, \frac{T(M|M') P(Y|X,M')P(M')}{T(M'|M) P(Y|X,M)P(M)})
 $$
 
-This acceptance probability still only applies to a single model, not an ensemble as in BART or BARN.  Transitioning $n$ such models at once is cumbersome, requiring an $n^2$ transition dimension \emph{in the space of models, $M$,} and a similarly complicated conditional.  Instead, BARN applies Gibbs Sampling to iteratively update models based on the residual, exactly as is done in BART \cite{chipman2010bart}.  short, this means that when updating model $M_k$, we first compute the residual with the other models, $R_k$.  Then we take one MCMC step with acceptance:
+This acceptance probability still only applies to a single model, not an ensemble as in BART or BARN.  Transitioning $n$ such models at once is cumbersome, requiring an $n^2$ transition dimension \emph{in the space of models, $M$,} and a similarly complicated conditional.  Instead, BARN applies Gibbs Sampling to iteratively update models based on the residual, exactly as is done in BART \cite{chipman2010bart}.  In short, this means that when updating model $M_k$, we first compute the residual with the other models, $R_k$.
+
+Recall that our stationary distribution, $P(x)$, is actually a \emph{posterior} distribution that accounts for both a prior on model size as well as conditional accuracy of the model.  More formally, we construct the full prior as follows:
+
+% make these numbered equations?
+$$
+P(M|R_k,X) = \frac{P(R_k|X,M)P(M)}{P(R_k)}
+$$
+
+That is, we seek the probability of the model given the data, $P(M|R_k,X)$.  The prior of the model, $P(M)$, we will directly compute shortly.  The conditional, $P(R_K|X,M)$ measures how accurately this particular model, $M$, approximates the target, $R_k$.  Finally, there is a general probability of the target residual, $R_k$, but as we only use the above posterior in a ratio, these terms cancel for $P(M|R_k,X)$ and $P(M'|R_k,X)$.  This leaves us only the numerator in our MCMC acceptance computation:
 
 $$
 A(M_k,M_k') = min(1, \frac{T(M_k|M_k') P(R_k|X,M_k')P(M_k')}{T(M_k'|M_k) P(R_k|X,M_k)P(M_k)})
@@ -139,7 +156,14 @@ T(M'|M) = \begin{cases}
 \end{cases}
 $$
 
-Next, we need a prior on the model, $P(M)$.  Now, a neural network is its architecture as well as its learned weights.  But as the weights can vary considerably depending on data, we restrict our prior to the size of the network.  While different domains may propose different priors, we again want to encourage relatively small models.  To that end, we encode a model's prior with a Poisson distribution on the count of neurons in its hidden layer.  This will have some mean value; we choose $\lambda=10$ after empirically testing a few options.  So model, $M$, with $m$ neurons has prior probability:
+When transitioning from $M$ to $M'$, we can make use of the already learned weights of $M$.  If $m' = m+1$, then we transfer the old weights to the new model, and randomly initialize the final new neuron weights.  This retains previously learned information so the new model need not train exactly from scratch.  Similarly, if $m' = m-1$, then we retain the weights of the first $m-1$ neurons.  Note, however, that these serve only as the initial weights weights for the network.
+
+% some addition info on mutate + train, maybe move this earlier
+Once the transition has been proposed and initial weights set, we can train this proposed network on the current training residual, $R_k$, and $X$.  Note that one can use any number of neural network optimization methods; for simplicity we use the Adam built into \texttt{sklearn} \cite{kingma2014adam} with a maximum number of 200 epochs (though this forms an additional hyperparameter to the BARN procedure).
+
+Again, we reiterate that the development of a proposed replacement neural network, $M'$, is a two step process.  First we mutate the architecture by adding or subtracting a node.  And only then do we train the resulting architecture, informed by the original model weights, on the target residual, $R_k$.  Only then do we compare this to residual \emph{validation} data for computing the acceptance ratio, $A$.
+
+Now, we need to specify a prior, $P(M)$.  Now, a neural network is its architecture as well as its learned weights.  But as the weights can vary considerably depending on data, we restrict our prior to the size of the network.  While different domains may propose different priors, we again want to encourage relatively small models.  To that end, we encode a model's prior with a Poisson distribution on the count of neurons in its hidden layer.  This will have some mean value; we choose $\lambda=10$ after empirically testing a few options.  So model, $M$, with $m$ neurons has prior probability:
 
 $$
 P(M) = \frac{\lambda^m e^{-\lambda}}{m!}
@@ -152,8 +176,6 @@ P(R_k|X,M_k) \approx \prod_{i \in \text{valid}} \frac{e^{-\frac{1}{2}\left(\frac
 $$
 
 By computing this on the residuals and following the Gibbs Sampling procedure to iterate through the models in the ensemble, we are effectively approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  After some burn-in period, the distribution of models reflects the posterior given the available architectures and the data.
-
-When transitioning from $M$ to $M'$, we can make use of the already learned weights of $M$.  If $m' = m+1$, then we transfer the old weights to the new model, and randomly initialize the final new neuron weights.  This retains previously learned information so the new model need not train exactly from scratch.  Similarly, if $m' = m-1$, then we retain the weights of the first $m-1$ neurons.  Training $M'$ will likely change these values as they have lost the contribution from one of the neurons.  There may be more careful techniques one can apply to retaining learned weights, but we adopt this procedure for prototyping purposes.
 
 \section{Evaluation}\label{sec:eval}
 
