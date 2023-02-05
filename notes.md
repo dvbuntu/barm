@@ -49,3 +49,25 @@ All committee meeting.  Good feedback around, and agreement that concept is soun
 * Explore hyperparameter space (e.g. try more models with smaller nets, maybe lambda=2)
 * Explain bayes prior/posterior in more detail
 * Can parallelization improve speed?  Maybe, maybe not.  There is a paper on Parallel BART.
+
+# 2 Feb 2023
+
+Meeting with Cristian, good feedback on additional library options
+
+* Include continuous integration via github actions/travis.yml (see old BARN repo)
+* Think carefully about synthetic datasets to generate for testing
+* Make visualization of histogram plots showing both prior neuron count dist vs actual (i.e. posterior) histogram plot
+
+# 4 Feb 2023
+
+Work on ML formulation.
+
+Making posterior explicit and showing weights have no prior/cancels out anyway.
+
+sum-of-NNs slightly more explicit.
+
+Still significant work to do integrating this into the comps manuscript.
+
+Possible proof/example: Show that an ensemble of NN with final sum can be written as big NN with restricted weights.  Approach by enforcing zero weights on what would be cross-network connections and enforce final sum weights to be 1.  
+
+$w_{(i),(j)} = 0$, where $(i)$ is a neuron belonging to model $i$, and $(j)$ is neuron belonging to model $j \neq i$.
