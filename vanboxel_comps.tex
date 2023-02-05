@@ -58,14 +58,14 @@ To evaluate the effectiveness of this approach, we apply BARN to a variety of be
 
 To understand the technique we develop to train an ensemble of neural networks (BARN), we first detail some of the core components to the method.  While many specifics (e.g. full Monte Carlo theory, supporting model assumptions, etc) are beyond the scope of this paper, we intend to convey the necessary basics of machine learning and the M-H algorithm.
 
-While machine learning takes many forms, we focus on neural networks to model regression problems.  For a given data point, we model each target value, $y \in \mathbb{R}$ as some function of independent variables, $x \in \mathbb{R}^n$, such that for each data point $x_i$, we have some error term, $\epsilon_i$, and $y_i$.
+While machine learning takes many forms, we focus on neural networks to model regression problems.  For a given data point, we model each target value, $y \in \mathbb{R}$ as some function of independent variables, $x \in \mathbb{R}^d$, such that for each data point $x_i$, we have some error term, $\epsilon_i \sim N(0,\sigma^2)$, and associated $y_i$.  The target value is some function of the input, $u(x_i)$, plus the error term:
 
 % move this to very beginning?
 $$
-y_i = f(x_i) + \epsilon_i
+y_i = u(x_i) + \epsilon_i
 $$
 
-In ordinary linear regression (OLS), we have a linear function $f(x_i) = \sum_j w_j x_{ij}$ (where $x_{ij}$ is the $j$th variable of the $i$th data point), and we assume the error terms ($\epsilon_i$) are normally distributed, $\epsilon_i \sim N(0,\sigma^2)$.  If the target really is a linear function of the input variables plus some noise (and a few other mild assumptions), this can be a very accurate model.  But this approach may fail if the true model is something nonlinear (e.g. $y_i = 2x_{i1} + 3x_{i2}^2 + \epsilon_i$).  We would need a nonlinear component in our model to accurately capture the nonlinear term in the data (e.g. generating a new $x_{i3} =x_{i2}^2$).
+In general we may not know the exact form of $u(x_i)$, so we model it via some learnable function, $f(x_i) \approx u(x_i)$.  Note that broadly our errors are distributed such that $E(y_i|x_i) = u(x_i)$, so we are really modeling this conditional.  In ordinary linear regression (OLS), we have a linear function $f(x_i) = \sum_j w_j x_{ij}$ (where $x_{ij}$ is the $j$th variable of the $i$th data point).  If the target really is a linear function of the input variables plus some noise (and a few other mild assumptions), this can be a very accurate model.  But this approach may fail if the true model is something nonlinear (e.g. $y_i = 2x_{i1} + 3x_{i2}^2 + \epsilon_i$).  We would need a nonlinear component in our model to accurately capture the nonlinear term in the data (e.g. generating a new $x_{i3} =x_{i2}^2$).
 
 Neural networks provide a very general nonlinear structure and train weights to model precisely these kinds of behaviors \cite{hastie2009elements}.  First, we construct a single ``neuron'',
 
