@@ -140,3 +140,9 @@ $T((M_j',w_j'), (M_j, w_j)) = T((M_j',w_j"), (M_j, w_j))$
 ## Back to BART
 
 They do draw of the tree arch (MCMC), then a quick random sample of terminal node values from normal (a prior).  I guess I really could do that sample on weights as well, but seems crazy.
+
+# 12 Feb 2023
+
+Yesterday updated BARN code so it's properly callable as a library.  Added some unit tests for relevant methods, and implemented github actions to run said tests.
+
+Today, put together basic BARN page to be part of sphinx documentation.  Had to fiddle with settings a fair bit to actually output the code blocks and autodoc components (`automodule` vs `autoclass`).  Also add some testing badges builtin to github.
