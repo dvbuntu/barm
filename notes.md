@@ -76,7 +76,7 @@ $w_{(i),(j)} = 0$, where $(i)$ is a neuron belonging to model $i$, and $(j)$ is 
 
 Meeting with Xueying.  Clarification on need to specify bayesian posterior for full ensemble.  Then I can show that conditioning on N-1 nets is equivalent to using the residual.  Follow the description/explanation laid out in BART.
 
-More explicitly state that $P(w_j|M_j)$ is flat.  This technically causes issues b/c it doesn't integrate to 1 on a continuous spectrum, but in practice, it's not a big deal.  As a practical matter, one could specify a normal with 0 mean and very large variance.  But still, should be metnioned.  Or maybe a normal distribution on weights is a good idea?
+More explicitly state that $P(w_j|M_j)$ is flat.  This technically causes issues b/c it doesn't integrate to 1 on a continuous spectrum, but in practice, it's not a big deal.  As a practical matter, one could specify a normal with 0 mean and very large variance.  But still, should be mentioned.  Or maybe a normal distribution on weights is a good idea?
 
 $P(w_j|M_j) \times P(M_j)
 
@@ -111,7 +111,7 @@ $$
 g_j = \sum_{k \in \text{second layer}} w_{kj} h_k(X) = \sum_{k \in \text{second layer}} w_{kj} h(\sum_{i \in \text{first layer}} x_{ij} w_{ij})
 $$
 
-So output depends on input more direclty.  Might be able to sum over these.
+So output depends on input more directly.  Might be able to sum over these.
 
 If we assume $h_k(X) \sim N(0,1)$, as when doing batch normalization, then we want $w_{kj} \sim N(\mu_k, \sigma^2_k)$!
 
@@ -146,3 +146,43 @@ They do draw of the tree arch (MCMC), then a quick random sample of terminal nod
 Yesterday updated BARN code so it's properly callable as a library.  Added some unit tests for relevant methods, and implemented github actions to run said tests.
 
 Today, put together basic BARN page to be part of sphinx documentation.  Had to fiddle with settings a fair bit to actually output the code blocks and autodoc components (`automodule` vs `autoclass`).  Also add some testing badges builtin to github.
+
+# 16 Feb 2023
+
+Discussion with Cristian about updating BARN code.
+
+* Test how no. epochs changes run time, if much at all.
+* If possible, bold name in papers in CV
+* for tutorial, RMarkdown, or jupyter notebook, or likely just markdown
+
+## code updates
+
+* Add comments to unittests, and clarify origin of constants
+* different test for log_likelihood
+* datatype checking in unittests, make sure it fails as expected
+    * similar test if give negative priors that bad things happen/catch
+
+## doc updates
+
+* change "simple linear" to "ordinary linear" (double check this is what I mean, maybe just remove adjective)
+* test the fitting process on a small random dataset
+* Source links in the docs don't actually work, hmm
+
+# 19 Feb 2023
+
+$R_j$ is sufficient stat for $T_j,M_j$ (and likewise for any such summation model).  Consider a generic likelihood for a single data point (the joint density over many points being a product of these, so we can simply factorize to generalize).  Recall $R_j = y - \sum_{k\neq j} g(x; T_k, M_k)$
+
+$$
+\begin{aligned}
+f_X(y| T_j,M_j,x) &= \frac{1}{\sqrt{2\pi\sigma^2}} e^{ \frac{-(y - \sum_{k=1}^m g(x;T_k, M_k))^2}{2\sigma^2}}\\
+f_X(y| T_j,M_j,x) &= \frac{1}{\sqrt{2\pi\sigma^2}} e^{ \frac{-(R_j - g(x;T_j,M_j))^2}{2\sigma^2}}\\
+\end{aligned}
+$$
+
+So by the Neyman-Fisher Factorization theorem, $R_j$ is a sufficient statistic for the output given $T_j,M_j$ (cite book?).  And by (566 book remark), this also means that the posterior $\pi(T_j,M_j|x,y,T_{(j)},M_{(j)}) = \pi(T_j,M_j|x,R_j)$.  This enables BART equation 14:
+
+$$
+p(T_j| M_j, \sigma) \propto p(T_j) \int p(R_j|T_j, M_j, \sigma) p(M_j|T_j,\sigma) dM_j
+$$
+
+This sufficiency, however, applies to any such "sum-of-x" model with a similar normal likelihood function.
