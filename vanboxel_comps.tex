@@ -10,14 +10,16 @@
 \usepackage[sort&compress,numbers,square]{natbib}
 \bibliographystyle{plainnat}
 
-\title{BARN: Brewing a Better Model}
+\title{BARNstorm and Transform: Bayesian Additive Regression Networks}
 
 \author{Danielle Van Boxel}
-\date{\today}
+%\date{\today}
+\date{7 Apr 2023}
 
 \usepackage{xcolor}
-\newcommand{\dvb}[1]{\textcolor{blue}{DVB: #1}}
-\newcommand{\crp}[1]{\textcolor{olive}{CRP: #1}}
+\newcommand{\dvb}[1]{\textcolor{blue}{DVB: #1}}  % comments by Danielle
+\newcommand{\crp}[1]{\textcolor{olive}{CRP: #1}} % comments by Cristian
+\newcommand{\xt}[1]{\textcolor{red}{XT: #1}}     % comments by Xueying
 
 \begin{document}
 \maketitle
@@ -77,7 +79,7 @@ where $w_j$ is some trainable parameter, and $g$ is a nonlinear ``activation'' f
 
 \begin{figure}[htb]
 \centering
-    \includegraphics[scale=1]{nn.png}
+    \includegraphics[scale=1]{figs/nn.png}
     \caption{Single hidden layer neural network predicts $y \in \mathbb{R}$ as a generic nonlinear function of $x \in \mathbb{R}^n$.  Note non-numeric input variables must be encoded numerically (e.g. as indicator variables).}
     \label{fig:nn}
 \end{figure}
@@ -94,7 +96,7 @@ To develop our ensemble of NNs, we sample from the space of networks using a Mar
 
 \begin{figure}[htb]
 \centering
-    \includegraphics[scale=0.4]{balance.png}
+    \includegraphics[scale=0.4]{figs/balance.png}
     \caption{Share of probability from $x$ moving to $x'$ is equal to share from $x'$ moving to $x$ for all pairs of states, ensuring overall distribution is constant.  Figure reproduced from \cite{stepanov2021math}.}
     \label{fig:balance}
 \end{figure}
@@ -177,6 +179,10 @@ $$
 
 By computing this on the residuals and following the Gibbs Sampling procedure to iterate through the models in the ensemble, we are effectively approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  After some burn-in period, the distribution of models reflects the posterior given the available architectures and the data.
 
+\section{BARN As A Library}\label{sec:leb}
+
+\dvb{Talk about setting up data science library, inspiration from BARTPy and BART R implementation.  Usage of sklearn for simplicity.  Inclusion of unit tests, and development of documentation.}
+
 \section{Evaluation}\label{sec:eval}
 
 We first assess the performance of BARN on using benchmark regression problems that have been previously used in studies examining the performance of newly-developed methods. Next, we focus on on a specific ecological data set as a small case study.
@@ -209,7 +215,7 @@ To confirm that these MCMC parameters are acceptable, we apply a simple batch me
 
 \begin{figure}[ht]
 \centering
-    \includegraphics[scale=0.66]{mpg_phi.png}
+    \includegraphics[scale=0.66]{figs/mpg_phi.png}
     \caption{Typical error results for one of the datasets during the MCMC process shows burn-in achieved after about 25 iterations.}
     \label{fig:phi}
 \end{figure}
@@ -238,7 +244,7 @@ wisconsin & \textbf{32.12} (1.73)  & 42.70(11.88 ) 0&  35.76 (3.21)  & 40.38(4.7
 
 \begin{figure}[ht]
 \centering
-    \includegraphics[scale=.3]{pres_results.png}
+    \includegraphics[scale=.3]{figs/pres_results.png}
     \caption{BARN almost always matches or beats other methods, and is more stable}
     \label{fig:results}
 \end{figure}
@@ -270,8 +276,8 @@ wisconsin  & 38.43 (3.14)  & 0.04 (0.03)&  0.09 ($<$0.01)  & $<$0.01 ($<$0.01) \
 
 \begin{figure}[ht]
 \centering
-    \includegraphics[scale=.5]{time_results.png}
-    \caption{BARN almost always matches or beats other methods, and is more stable}
+    \includegraphics[scale=.5]{figs/time_results.png}
+    \caption{BARN computation time scales with problem difficulty, not just size}
     \label{fig:time_results}
 \end{figure}
 
@@ -291,7 +297,7 @@ Note that in other Bayesian linear models \cite{roman2022bayclump}, the testing 
 
 \begin{figure}[ht]
 \centering
-    \includegraphics[scale=.7]{iso_results.png}
+    \includegraphics[scale=.7]{figs/iso_results.png}
     \caption{RMSE on D47 testing data for various methods.  BARN performs similarly to linear methods \cite{roman2022bayclump} even when a big NN and BART perform significantly worse.  Note that methods used in this study (top four models) reserve 25\% of the training data for validation (hence why ``OLS\_VALID'' is separate from ``OLS'').}
     \label{fig:iso_results}
 \end{figure}
@@ -316,9 +322,13 @@ Such problems naturally suggest additional types of models to implement in BARN.
 
 We introduce and demonstrate the effectiveness of a new model ensemble technique, Bayesian Additive Regression Networks.  This approach adapts the bayesian MCMC method of BART to neural networks rather than decision trees.  On a variety of benchmark problems, BARN often outperformed competing methods and always avoided catastrophic failures.  On a more recent data set of interest, BARN compared well to other methods, even when nonlinear approaches failed.  Though highly accurate, BARN is, however, computationally expensive in its current prototype state.  Future implementations should focus on addressing this and generalizing BARN further to other types of neural networks or generic models.
 
+\section{Future Work}
+
+\subsection{
+
 \section*{Acknowledgements}
 
-This work would not have been possible without the help of multiple colleagues.  Foremost, we must thank Cristian Rom{\'a}n Palacios for not only his detailed manuscript suggestions but also for suggesting the isotope data set.  Additionally, we would like to thank Kevin Lin, whose course on Monte Carlo methods provided the catalyst for our approach.  And finally, Helen Zhang first introduced us to BART, which we are still gaining insights from today.
+This work would not have been possible without the help of multiple colleagues.  Foremost, I must thank my advisors Cristian Rom{\'a}n Palacios and Xueying Tang for constant technical feedback as well as overall guidance.  Additionally, I would like to thank Kevin Lin (who's Monte Carlo class inspired this paper) and the rest of my examination committee: Helen Zhang, Barney Maccabe, and Tom Kennedy.  Further, I am in debt to my supportive friends at the Trans Wildcat Alliance and LGBTQ+ Resource Center for regular encouragement and validation.  And finally, none of this would be possible without my amazing spouse, Jenn, whose support for my own transition enables me to be my best self.
 
 \clearpage
 
