@@ -36,11 +36,15 @@
 
 Training a cooperative set of weak models (i.e. an ensemble of small models) rather than a single large model has proven itself an effective machine learning technique \cite{dietterich2000ensemble,hansen1990neural,seni2010ensemble,lee2020comparing}.  While Random Forests (RF) \cite{ho1995random,breiman2001random} are one of the most well-known ensemble methods, multiple other approaches have been proposed over the years, \cite[provide some reviews]{way2012advances,dong2020survey}.  One tree-based technique that has outperformed more recent models \cite{biau2019neural} is Bayesian Additive Regression Trees (BART) \cite{chipman2010bart}.  At the same time, neural networks (NNs) have become extremely accurate on a wide variety of tasks \cite{schmidhuber2015deep}, attracting attention from more traditional machine learning methods.
 
-Seeking even better methods, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
+Seeking even better methods \dvb{inject motivation concepts here?}, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
 
 Rather than copy an existing ensembling approach exactly into neural networks \cite[for example]{biau2019neural}, we instead adapt the conditional Monte Carlo Markov Chain (MCMC) learning process of BART \cite{chipman2010bart} to an ensemble of neural network architectures.  That is, we train a series of NNs, each one on the residual of the target value and the summed prediction of the remaining NNs.  We further condition acceptance of a model following the Bayes CART method \cite{chipman1998bayesian}.  This sampling procedure of Bayesian Additive Regression Networks (BARN) generalizes the BART method to a new model type.  Further, the procedure encapsulates both training and neural architecture search into a bayesian framework (rather than generic search as in some studies \cite{idrissi2016genetic}).  We describe this in more detail in \autoref{sec:method}.
 
+\dvb{Describe need to have a software library to ensure usability by data science practicitioners.  Cite studies that have libs along with them?  Is there a meta study on this?}
+
 To evaluate the effectiveness of this approach, we apply BARN to a variety of benchmark data sets \cite{Dua:2019} as used in the Neural Random Forests \cite{biau2019neural} study.  We also examine a more recent ecological data set \cite{roman2022bayclump}.  To limit computation time, we restrict our analysis to prototype size (mean 4 neurons) and number networks (fixed at 10) in the ensemble.  We additionally train, however, equivalent sized (to the entire ensemble) NNs and equivalent-count BART forests (i.e. 10 decision trees) for comparison.  We find that BARN, though expensive (in its current implementation), is able to reliably match or beat performance of both alternatives.  It is robust to different modeling problems, even when it does not produce the most accurate result, it was always close, and never the worst performing model.
+
+\dvb{Finally, we explore how these foundations enable further research into broad Bayesian Additive Regression Models \ldots}
 
 \section{Related Work}\label{sec:related}
 
@@ -109,7 +113,7 @@ $$
 
 Intuitively, if we propose a ``more likely'' state ($P(x') \geq P(x)$) and it's at least as likely to transit from $x'$ to $x$ as the other way ($T(x|x') \geq T(x'|x)$), then we will accept the new state with probability 1.  If either of these conditions fails, there is only some chance (possibly still probability 1), depending on the exact values, of accepting the new state \cite{stepanov2021math}.  Note that if we were reject every less likely state, we would lose detailed balance and no longer have the desired stationary distribution.  After a number of ``burn-in'' iterations, the distribution of states over time converges to the desired $P(x)$.  Note, however, that successive times are necessarily correlated.
 
-% Add some background on Basic bayesian stats here, note that we cancel the P(Y,X) in the acceptance ratio
+\dvb{ Add some background on Basic bayesian stats here, note that we cancel the P(Y,X) in the acceptance ratio}
 
 
 For BART and BARN, however, we sample not from a known distribution, but from the distribution of models that accurately predict our target value (i.e. smaller residuals).  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into two components: 
@@ -141,11 +145,17 @@ $$
 
 When we update the $M_{k+1}$ model, we recompute the residual using the possibly new $M_k$.  This allows us to quickly update each model's contribution and maintain the overall MCMC procedure.  As in BART, this MCMC prodcedure converges to an ensemble of models conditioned on their ability to additively predict the target.
 
+\dvb{Mention BART's posterior uses variance as well?}
+
+\dvb{Remark on BART's priors on terminal node value distribution, b/c BARN lacks something similar: so no direct prior on model output}
+
 \section{Methodology}\label{sec:method}
 
 We adapt the BART procedure \cite{chipman2010bart} to an ensemble of small single-hidden layer neural networks instead of decision trees.  That is, we train the ensemble such that $\hat{y}_i = \sum_k M_k(x_i)$, where each $M_k$ is a neural network with some number of neurons and one hidden layer.  In principle the model can be arbitrarily more complicated, but we retain this structure to simplify MCMC calculations and reduce computation time.  Due to the similarities with BART, we call our procedure Bayesian Additive Regression Networks (BARN).
 
 At a high level, we propose architectural changes to a single model, $M_k$, at a time.  This single model change enable us to condition on the fixed models, $M_{j\neq k}$ to effect Gibbs' sampling.  Each MCMC step proposes a modification to $M_k$'s architecture, trains this new model, and computes an acceptance probability, $A$.  Note that because we determine the number of neurons within each network via the MCMC acceptance/rejection, this process implicitly performs neural architecture search.  For simplicity, we fix the \emph{number of models} in the ensemble as $N$.  The MCMC procedure only modifies existing models in the ensemble.
+
+\dvb{Explain general posterior for BARN here, in very little space, but combine NN optimization as part of process}
 
 To do such modifications with detailed balance, we need the three components of the acceptance probability, $A$.  For the transition probability, $T(M'|M)$, we have some flexibility.  While a ``tilted'' distribution would provide faster convergence, it also relies on more knowledge of the target distribution.  As this study is a prototype, we adopt a simple transition rule based on the size (i.e. number of neurons $m'$ and $m$ in the hidden layer of models $M'$ and $M$, respectively) of the models to discourage them from growing large.  Note that we do not consider the weight values themselves in this calculation; doing so would require handling dimensionality changes (i.e. with reversible jump MCMC \cite{green1995reversible}).  And it would require some judgement or heuristic a priori about how the weights should change, \emph{independent of the training process}.  Therefore, we restrict transitions to change by exactly 1 neuron.  In our analysis, we set $p=0.4$ as the growth transition probability.
 
@@ -177,13 +187,15 @@ $$
 P(R_k|X,M_k) \approx \prod_{i \in \text{valid}} \frac{e^{-\frac{1}{2}\left(\frac{(R_k-M_k(X_i))}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}
 $$
 
+\dvb{quickly mention/show that we can use the residual as replacement of non-current componeents, then gibbs sample}
+
 By computing this on the residuals and following the Gibbs Sampling procedure to iterate through the models in the ensemble, we are effectively approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  After some burn-in period, the distribution of models reflects the posterior given the available architectures and the data.
 
 \section{BARN As A Library}\label{sec:leb}
 
 \dvb{Talk about setting up data science library, inspiration from BARTPy and BART R implementation.  Usage of sklearn for simplicity.  Inclusion of unit tests, and development of documentation.}
 
-\section{Evaluation}\label{sec:eval}
+\section{Initial Evaluation}\label{sec:eval}
 
 We first assess the performance of BARN on using benchmark regression problems that have been previously used in studies examining the performance of newly-developed methods. Next, we focus on on a specific ecological data set as a small case study.
 
@@ -324,7 +336,37 @@ We introduce and demonstrate the effectiveness of a new model ensemble technique
 
 \section{Future Work}
 
-\subsection{
+\subsection{Dissertation Goals}
+
+\begin{itemize}
+\item \dvb{Hyperparameter grid search and optimization for BARN}
+\item \dvb{Keras/Tensorflow implementation for speed}
+\item \dvb{Benchmark testing in style of BART}
+\item \dvb{Exploration of alternative models like SVM}
+\item \dvb{Small example showing classification (either with Probit or similar)}
+\end{itemize}
+
+\subsection{Research Schedule}
+
+\begin{itemize}
+\item \dvb{Summer 2023: Improve implementation speed}
+\item \dvb{Summer 2023: Study BART benchmarking/data sets}
+\item \dvb{Autumn 2023: Explore SVM}
+\item \dvb{Autumn 2023: Classification example}
+\item \dvb{Autumn 2023: Dissertation background and lit review sections}
+\item \dvb{Spring 2024: Dissertation integration and code polishing}
+\item \dvb{May 2024: Defense?}
+\end{itemize}
+
+Risks/mitigations:
+
+\begin{itemize}
+\item \dvb{Can't speed up $\implies$ limit benchmarking}
+\item \dvb{SVM difficult to use with BARN-like model $\implies$ try different method, more advanced NN?}
+\end{itemize}
+
+
+
 
 \section*{Acknowledgements}
 

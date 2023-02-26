@@ -186,3 +186,19 @@ p(T_j| M_j, \sigma) \propto p(T_j) \int p(R_j|T_j, M_j, \sigma) p(M_j|T_j,\sigma
 $$
 
 This sufficiency, however, applies to any such "sum-of-x" model with a similar normal likelihood function.
+
+# 23 Feb 2023
+
+Meeting with Xueying.
+
+Bayesian posterior looks good.  Should add remark to paper *briefly* stating this and that we have a full bayes setup.  Also comment on flat weight prior isn't fully appropriate but shouldn't hurt.  Or we can try with a generic normal prior, or uniform on a wide interval.
+
+Hmm, prior on weights is a form of regularization, isn't it?
+
+Don't need full sufficiency to be able to use $R_j$ in place of others.  It's really far more of just a substitution.  Maybe mention that it works this way, though
+
+Maybe fix slide 9, no power of K?  double check this, if even needed at all.
+
+# 25 Feb 2023
+
+Rebuilding comps paper from manuscript.  Add notes about sections/details to add like schedule and things from last meeting.
