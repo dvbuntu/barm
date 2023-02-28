@@ -31,12 +31,19 @@
 
 \section{Introduction}\label{sec:intro}
 
-% clarify general ML problem y = f(x) + eps
 % motivate what BARN might be good at: broad applicability, architecture search with bayesian stats (look this up), scaling computation with problem difficulty/controlling efforts through priors
+
+Consider the broad class of problems of estimating a function, $u(x)$, where for inputs, $x_i \in \mathbb{R}^d$ and $\epsilon_i \sim N(0,\sigma^2)$, we have outputs, $y_i \in \mathbb{R}$.  This process is generally known as ``regression'', as compared with e.g. classification, clustering, or density estimation in machine learning learning \cite{hastie2009elements}.
+
+$$
+y_i = u(x_i) + \epsilon_i
+$$
 
 Training a cooperative set of weak models (i.e. an ensemble of small models) rather than a single large model has proven itself an effective machine learning technique \cite{dietterich2000ensemble,hansen1990neural,seni2010ensemble,lee2020comparing}.  While Random Forests (RF) \cite{ho1995random,breiman2001random} are one of the most well-known ensemble methods, multiple other approaches have been proposed over the years, \cite[provide some reviews]{way2012advances,dong2020survey}.  One tree-based technique that has outperformed more recent models \cite{biau2019neural} is Bayesian Additive Regression Trees (BART) \cite{chipman2010bart}.  At the same time, neural networks (NNs) have become extremely accurate on a wide variety of tasks \cite{schmidhuber2015deep}, attracting attention from more traditional machine learning methods.
 
-Seeking even better methods \dvb{inject motivation concepts here?}, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
+Seeking even better methods, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
+
+\dvb{inject motivation concepts here?}
 
 Rather than copy an existing ensembling approach exactly into neural networks \cite[for example]{biau2019neural}, we instead adapt the conditional Monte Carlo Markov Chain (MCMC) learning process of BART \cite{chipman2010bart} to an ensemble of neural network architectures.  That is, we train a series of NNs, each one on the residual of the target value and the summed prediction of the remaining NNs.  We further condition acceptance of a model following the Bayes CART method \cite{chipman1998bayesian}.  This sampling procedure of Bayesian Additive Regression Networks (BARN) generalizes the BART method to a new model type.  Further, the procedure encapsulates both training and neural architecture search into a bayesian framework (rather than generic search as in some studies \cite{idrissi2016genetic}).  We describe this in more detail in \autoref{sec:method}.
 
@@ -64,12 +71,7 @@ To evaluate the effectiveness of this approach, we apply BARN to a variety of be
 
 To understand the technique we develop to train an ensemble of neural networks (BARN), we first detail some of the core components to the method.  While many specifics (e.g. full Monte Carlo theory, supporting model assumptions, etc) are beyond the scope of this paper, we intend to convey the necessary basics of machine learning and the M-H algorithm.
 
-While machine learning takes many forms, we focus on neural networks to model regression problems.  For a given data point, we model each target value, $y \in \mathbb{R}$ as some function of independent variables, $x \in \mathbb{R}^d$, such that for each data point $x_i$, we have some error term, $\epsilon_i \sim N(0,\sigma^2)$, and associated $y_i$.  The target value is some function of the input, $u(x_i)$, plus the error term:
-
-% move this to very beginning?
-$$
-y_i = u(x_i) + \epsilon_i
-$$
+While machine learning takes many forms, we focus on neural networks to model regression problems.  For a given data point, we model each target value, $y \in \mathbb{R}$ as some function of independent variables, $x \in \mathbb{R}^d$, such that for each data point $x_i$, we have some error term, $\epsilon_i \sim N(0,\sigma^2)$, and associated $y_i$.  The target value is some function of the input, $u(x_i)$, plus the error term, $\epsilon_i$, all as described in \ref{sec:intro}.
 
 In general we may not know the exact form of $u(x_i)$, so we model it via some learnable function, $f(x_i) \approx u(x_i)$.  Note that broadly our errors are distributed such that $E(y_i|x_i) = u(x_i)$, so we are really modeling this conditional.  In ordinary linear regression (OLS), we have a linear function $f(x_i) = \sum_j w_j x_{ij}$ (where $x_{ij}$ is the $j$th variable of the $i$th data point).  If the target really is a linear function of the input variables plus some noise (and a few other mild assumptions), this can be a very accurate model.  But this approach may fail if the true model is something nonlinear (e.g. $y_i = 2x_{i1} + 3x_{i2}^2 + \epsilon_i$).  We would need a nonlinear component in our model to accurately capture the nonlinear term in the data (e.g. generating a new $x_{i3} =x_{i2}^2$).
 
@@ -96,7 +98,7 @@ $$
 R_{ik} = y_i - \sum_{j\neq k} f_j(x_i)
 $$
 
-To develop our ensemble of NNs, we sample from the space of networks using a Markov Chain.  In a simple MCMC procedure, we would sample from some target distribution, $P(x)$, that is, in general, difficult to sample from directly \cite{haugh2021tutorial}.  To do this sampling, we construct a Markov Chain whose stationary distribution is $P(x)$.  One straightforward way to ensure this is make sure the probability flux from state $x$ to state $x'$ in our procedure is equal to the probability flux of moving from state $x'$ to $x$, shown in \autoref{fig:balance}.  This is known as enforcing ``detailed balance''.
+To develop our ensemble of NNs, we sample from the Bayesian posterior distribution of networks using a Markov Chain.  In a simple MCMC procedure, we would sample from some target distribution, $P(x)$, that is, in general, difficult to sample from directly \cite{haugh2021tutorial}.  To do this sampling, we construct a Markov Chain whose stationary distribution is $P(x)$.  One straightforward way to ensure this is make sure the probability flux from state $x$ to state $x'$ in our procedure is equal to the probability flux of moving from state $x'$ to $x$, shown in \autoref{fig:balance}.  This is known as enforcing ``detailed balance''.
 
 \begin{figure}[htb]
 \centering
@@ -113,10 +115,15 @@ $$
 
 Intuitively, if we propose a ``more likely'' state ($P(x') \geq P(x)$) and it's at least as likely to transit from $x'$ to $x$ as the other way ($T(x|x') \geq T(x'|x)$), then we will accept the new state with probability 1.  If either of these conditions fails, there is only some chance (possibly still probability 1), depending on the exact values, of accepting the new state \cite{stepanov2021math}.  Note that if we were reject every less likely state, we would lose detailed balance and no longer have the desired stationary distribution.  After a number of ``burn-in'' iterations, the distribution of states over time converges to the desired $P(x)$.  Note, however, that successive times are necessarily correlated.
 
-\dvb{ Add some background on Basic bayesian stats here, note that we cancel the P(Y,X) in the acceptance ratio}
+
+For BART and BARN, however, we sample not from a known distribution, but from a posterior distribution in a fully Bayesian framework.  That is, suppose in a general context that we estimate the probability distribution of some parameter, $\theta$ given some data, $X$.  This might be difficult to directly compute, but suppose the reverse, estimating the likelihood of seeing data given the parameter (e.g. $N$ independent samples of some Bernoulli distribution with probability of success $p$), is straightforward (and known as the ``conditional'').  Then we can apply Bayes Theorem to recover our original value \cite{casella2021statistical}, requiring only the addition ``prior'' distributions on $P(\theta)$ (and technically, $P(X)$, though often proportionality matters as in the case of $A(x,x')$).  We combine these to derive a ``Posterior'' distribution on $\theta$ given the data, $X$:
+
+$$
+P(\theta|X) = \frac{P(X|\theta)P(\theta)}{P(X)}
+$$
 
 
-For BART and BARN, however, we sample not from a known distribution, but from the distribution of models that accurately predict our target value (i.e. smaller residuals).  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into two components: 
+We can frame the distribution of models that accurately predict our target value (i.e. smaller residuals) in this manner.  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into two components: 
 
 $$
 P(x) = P(Y|X,M) P(M)
@@ -155,7 +162,7 @@ We adapt the BART procedure \cite{chipman2010bart} to an ensemble of small singl
 
 At a high level, we propose architectural changes to a single model, $M_k$, at a time.  This single model change enable us to condition on the fixed models, $M_{j\neq k}$ to effect Gibbs' sampling.  Each MCMC step proposes a modification to $M_k$'s architecture, trains this new model, and computes an acceptance probability, $A$.  Note that because we determine the number of neurons within each network via the MCMC acceptance/rejection, this process implicitly performs neural architecture search.  For simplicity, we fix the \emph{number of models} in the ensemble as $N$.  The MCMC procedure only modifies existing models in the ensemble.
 
-\dvb{Explain general posterior for BARN here, in very little space, but combine NN optimization as part of process}
+\dvb{Explain general posterior for BARN here, in very little space, but combine NN optimization as part of process.  More details about $P(M)$ components? }
 
 To do such modifications with detailed balance, we need the three components of the acceptance probability, $A$.  For the transition probability, $T(M'|M)$, we have some flexibility.  While a ``tilted'' distribution would provide faster convergence, it also relies on more knowledge of the target distribution.  As this study is a prototype, we adopt a simple transition rule based on the size (i.e. number of neurons $m'$ and $m$ in the hidden layer of models $M'$ and $M$, respectively) of the models to discourage them from growing large.  Note that we do not consider the weight values themselves in this calculation; doing so would require handling dimensionality changes (i.e. with reversible jump MCMC \cite{green1995reversible}).  And it would require some judgement or heuristic a priori about how the weights should change, \emph{independent of the training process}.  Therefore, we restrict transitions to change by exactly 1 neuron.  In our analysis, we set $p=0.4$ as the growth transition probability.
 
@@ -189,7 +196,9 @@ $$
 
 \dvb{quickly mention/show that we can use the residual as replacement of non-current componeents, then gibbs sample}
 
-By computing this on the residuals and following the Gibbs Sampling procedure to iterate through the models in the ensemble, we are effectively approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  After some burn-in period, the distribution of models reflects the posterior given the available architectures and the data.
+Recall that these residuals are sufficient (in fact, exactly equal to) to replace the contribution from all of the frozen models in the ensemble.  So when we fix those and subtract the effect using the residuals, we are implementing a form of Gibbs' sampling.  That is, we are approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  
+
+By iterating through the models in this fashion, we develop better and better approximations to the posterior.  After some burn-in period, the distribution of models reflects the posterior given the available architectures and the data.
 
 \section{BARN As A Library}\label{sec:leb}
 
@@ -322,15 +331,13 @@ Based on \autoref{tab:results} and \autoref{fig:results}, BARN is competitive wi
 
 This performance, however, comes at a cost.  While BART and a single NN can be trained in a few to tens of seconds, performing 200 iterations of BARN takes several minutes on these problems.  This may be in part due to implementation details; we use the Scikit-Learn Python module to handle NN training \cite{scikit-learn} and manually code the MCMC procedure.  This means each small network has to be loaded into memory, and we are not taking advantage of GPU capabilities.  Regardless, on the scale of problems considered, BARN even as a prototype was sufficiently fast.
 
-\section{Future Work}\label{sec:future}
+\section{Conclusions}\label{sec:conclusions}
 
 Though \autoref{sec:eval} shows BARN to be competitive, there remains a significant amount of future work on better theoretical understanding and practical implementation.  Most of the theoretical advances relate to more rigorous analysis of the MCMC components.  For example, our selection of transition probabilities was somewhat arbitrary, while Bayesian CART \cite{chipman1998bayesian} claimed to justify (though not explicitly state) their expressions.  We may be able to derive a tilted distribution to improve convergence and reduce variance in the produced models.  Similarly, we need better justification for our model size prior, $\lambda$.  While some kind of Poisson or Negative Binomial model is probably sufficient, a heuristic to guide the prior would be helpful.  In BART \cite{chipman2010bart}, they find tree size parameters that they claim are broadly applicable; it may be that we can find something similar for neural networks.  Finally, we assumed the residuals for each model are i.i.d normal, but this is problem dependent.  One can account for relaxations to this by modifying the $P(Y|X,M)$ expression, but it is not clear if we can derive a closed form for this similar to that of BART.  We believe our theoretical approach is sound and confirmed by the experimental results, but this remains an open area of research.
 
 On the applied side, there is also fruitful future research.  Our results are for small-scale ensembles of only 10 NNs, but to take more inspiration from BART, we suspect on the order of 100 NNs will be more effective.  Likewise, a larger ensemble may require a longer burn-in period (BART uses 1000 by default \cite{chipman2010bart}).  Each of these changes comes with a direct cost of 10 times as much computation, however, so we may first consider writing more computationally efficient software.  TensorFlow with Keras \cite{chollet2015keras} can provide a straightforward GPU-capable library for building the component neural networks.  Further, we may be able to better cache intermediate results, possibly by storing the ensemble in one large network.  We can create an NN with the sum of the neuron counts similar to our comparison in \autoref{sec:eval}, but then zero the weights on what would be cross network connections.  And when running the model, we could mask off entire unused neurons (i.e. preload a network with say 100 neurons, but only unmask them as needed).  These improvements may also enable BARN to address larger scale problems like age estimation from facial images or other big data problems.
 
 Such problems naturally suggest additional types of models to implement in BARN.  In the vein of deep learning, we may want to enable multiple hidden layers of neurons.  Or for image data, it may be helpful to have a convolutional layer architecture (computing the same filter on different regions of an image).  These types of changes, however, require a mechanism for transitioning between states (e.g. when adding a new layer, do we add a single neuron, or several?).  Bayesian CART \cite{chipman1998bayesian} notes that this can be difficult to derive (though it may still be feasible to specify something, even if not optimal).  Broadening our view further, we can also extend BARN to classification tasks.  Researchers have recently expanded BART to multinomial logistic (rather than probit) outcomes \cite{xu2021inference}; we should be able to apply that technique to BARN if not adapt the additive regressors directly to the various logit estimations (essentially aggregating the residuals into the logit bias terms).  The most general view, however, would be to apply this BART/BARN approach to \emph{any} model type.  So long as one can specify the MH components: a model transition probability, $q(M,M')$, a model fit likelihood, $P(R_k|X, M')$, and a model prior probability, $P(M')$, this approach should be feasible.  This would be fruitful to study more theoretically and empirically with a variety of model types.  As a generalization of BART, BARN has many new research possibilities.
-
-\section{Conclusions}
 
 We introduce and demonstrate the effectiveness of a new model ensemble technique, Bayesian Additive Regression Networks.  This approach adapts the bayesian MCMC method of BART to neural networks rather than decision trees.  On a variety of benchmark problems, BARN often outperformed competing methods and always avoided catastrophic failures.  On a more recent data set of interest, BARN compared well to other methods, even when nonlinear approaches failed.  Though highly accurate, BARN is, however, computationally expensive in its current prototype state.  Future implementations should focus on addressing this and generalizing BARN further to other types of neural networks or generic models.
 
@@ -364,7 +371,6 @@ Risks/mitigations:
 \item \dvb{Can't speed up $\implies$ limit benchmarking}
 \item \dvb{SVM difficult to use with BARN-like model $\implies$ try different method, more advanced NN?}
 \end{itemize}
-
 
 
 
