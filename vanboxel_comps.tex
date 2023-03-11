@@ -119,14 +119,14 @@ Intuitively, if we propose a ``more likely'' state ($P(x') \geq P(x)$) and it's 
 For BART and BARN, however, we sample not from a known distribution, but from a posterior distribution in a fully Bayesian framework.  That is, suppose in a general context that we estimate the probability distribution of some parameter, $\theta$ given some data, $X$.  This might be difficult to directly compute, but suppose the reverse, estimating the likelihood of seeing data given the parameter (e.g. $N$ independent samples of some Bernoulli distribution with probability of success $p$), is straightforward (and known as the ``conditional'').  Then we can apply Bayes Theorem to recover our original value \cite{casella2021statistical}, requiring only the addition ``prior'' distributions on $P(\theta)$ (and technically, $P(X)$, though often proportionality matters as in the case of $A(x,x')$).  We combine these to derive a ``Posterior'' distribution on $\theta$ given the data, $X$:
 
 $$
-P(\theta|X) = \frac{P(X|\theta)P(\theta)}{P(X)}
+P(\theta|X) \propto \frac{P(X|\theta)P(\theta)}{P(X)}
 $$
 
 
-We can frame the distribution of models that accurately predict our target value (i.e. smaller residuals) in this manner.  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into two components: 
+We can frame the distribution of models that accurately predict our target value (i.e. smaller residuals) in this manner.  Consider a generic model, $M$ (e.g. a decision tree or a neural network).  Generalizing the bayesian CART procedure \cite{chipman1998bayesian}, we expand the target distribution into multiple components: 
 
 $$
-P(x) = P(Y|X,M) P(M)
+P(x) \propto P(Y|X,M) P(M)
 $$
 
 where $P(M)$ is some Bayesian prior on the model itself, independent of the data.  We typically use this prior to control model size (e.g. encourage smaller models).  On the other hand, $P(Y|X,M)$ represents how well the model fits the data (target $Y$ with input $X$).  Our transition probabilities (in BARN or BART), $T(M,M')$ have some specification as well (note that this mostly affects the efficiency and speed of convergence of the procedure).  Our revised conditional acceptance is then:
@@ -144,25 +144,29 @@ $$
 P(M|R_k,X) = \frac{P(R_k|X,M)P(M)}{P(R_k)}
 $$
 
-That is, we seek the probability of the model given the data, $P(M|R_k,X)$.  The prior of the model, $P(M)$, we will directly compute shortly.  The conditional, $P(R_K|X,M)$ measures how accurately this particular model, $M$, approximates the target, $R_k$.  Finally, there is a general probability of the target residual, $R_k$, but as we only use the above posterior in a ratio, these terms cancel for $P(M|R_k,X)$ and $P(M'|R_k,X)$.  This leaves us only the numerator in our MCMC acceptance computation:
+That is, we seek the probability of the model given the data, $P(M|R_k,X)$.  The prior of the model, $P(M)$, we will directly compute shortly.  The conditional, $P(R_K|X,M)$ measures how accurately this particular model, $M$, approximates the target, $R_k$.  Finally, there is a general probability of the target residual, $R_k$, but as we only use the above posterior in a ratio, these terms cancel for $P(M|R_k,X)$ and $P(M'|R_k,X)$.  This leaves us only the numerator in our MCMC acceptance computation.
+
+Now, the model prior, $P(M)$, also decomposes into multiple pieces.  Part of this is the the prior on the standard deviation of the error term, $P(\sigma)$, which BART sets semi-heuristically by estimating with an OLS model and allowing for a broad range in that region \cite{chipman2010bart}.  Note, however, that this acts as a form of regularization; a proposed model with a smaller error variance would nominally be preferable, but it may be more likely that it has overfit than is truly correct.  If information is available on expected variance distribution (as from measurement errors themselves), this would inform this prior.  The next component is then the prior on the size of model $M_j$, $P(M_j)$.  In BART, again, this is a distribution both on the depth of trees as well as number of nodes.  And as before, this is a form of regularization, ensuring models do not grow so large as to generalize poorly.  Finally, there should be a prior on the model weights themselves, $P(w_j|M_j)$.  Referring back to BART, these are the terminal node value distributions, but for BARN, these are neural network weights.  Because we will learn these weights via traditional NN optimization techniques, however, we leave the prior on them flat.  While nominally this makes the Bayesian procedure improper (as the probability would not integrate to 1 with any non-zero flat value over all reals), because we cancel out like terms in the acceptance ratio, this effect is immaterial.  Therefore our final full model prior over all of the networks in the ensemble is:
+
+$$
+P((M_1, w_1), \ldots, (M_m, w_m),\sigma) &= P(\sigma) \prod_j P(w_j|M_j)P(M_j)\\
+$$
+
+With the prior and the conditional specified, we have a fully Bayesian posterior and can apply these to acceptance ratio.  Note that we use a flat prior on both the weights and the error variance in BARN, so those terms cancel out.  If insightful knowledge of such terms is available in a particular application, however, one should make use of them.
 
 $$
 A(M_k,M_k') = min(1, \frac{T(M_k|M_k') P(R_k|X,M_k')P(M_k')}{T(M_k'|M_k) P(R_k|X,M_k)P(M_k)})
 $$
 
-When we update the $M_{k+1}$ model, we recompute the residual using the possibly new $M_k$.  This allows us to quickly update each model's contribution and maintain the overall MCMC procedure.  As in BART, this MCMC prodcedure converges to an ensemble of models conditioned on their ability to additively predict the target.
+When we update the $M_{k+1}$ model, we recompute the residual using the possibly new $M_k$.  This allows us to quickly update each model's contribution and maintain the overall MCMC procedure.  As in BART, this MCMC procedure converges to an ensemble of models conditioned on their ability to additively predict the target.
 
-\dvb{Mention BART's posterior uses variance as well?}
-
-\dvb{Remark on BART's priors on terminal node value distribution, b/c BARN lacks something similar: so no direct prior on model output}
+We make one additional aside on the effects not having priors on weights in BARN.  With BART, the distribution of terminal node weights directly leads to a distribution on whole ensemble predictions (as the ensemble is a sum of these known terminal node distributions) \cite{chipman2010bart}.  In a neural network, however, computing the distribution of the output is more involved.  Even if there is a distribution on weights, the distribution of input values is also required.  And interaction between neurons is not indepedent, as they will have been trained with a traditional optimization.  But such optimization is well studied and experimentally proven to be reliable \cite{kingma2014adam} for neural networks, so we maintain such an approach for BARN.
 
 \section{Methodology}\label{sec:method}
 
 We adapt the BART procedure \cite{chipman2010bart} to an ensemble of small single-hidden layer neural networks instead of decision trees.  That is, we train the ensemble such that $\hat{y}_i = \sum_k M_k(x_i)$, where each $M_k$ is a neural network with some number of neurons and one hidden layer.  In principle the model can be arbitrarily more complicated, but we retain this structure to simplify MCMC calculations and reduce computation time.  Due to the similarities with BART, we call our procedure Bayesian Additive Regression Networks (BARN).
 
 At a high level, we propose architectural changes to a single model, $M_k$, at a time.  This single model change enable us to condition on the fixed models, $M_{j\neq k}$ to effect Gibbs' sampling.  Each MCMC step proposes a modification to $M_k$'s architecture, trains this new model, and computes an acceptance probability, $A$.  Note that because we determine the number of neurons within each network via the MCMC acceptance/rejection, this process implicitly performs neural architecture search.  For simplicity, we fix the \emph{number of models} in the ensemble as $N$.  The MCMC procedure only modifies existing models in the ensemble.
-
-\dvb{Explain general posterior for BARN here, in very little space, but combine NN optimization as part of process.  More details about $P(M)$ components? }
 
 To do such modifications with detailed balance, we need the three components of the acceptance probability, $A$.  For the transition probability, $T(M'|M)$, we have some flexibility.  While a ``tilted'' distribution would provide faster convergence, it also relies on more knowledge of the target distribution.  As this study is a prototype, we adopt a simple transition rule based on the size (i.e. number of neurons $m'$ and $m$ in the hidden layer of models $M'$ and $M$, respectively) of the models to discourage them from growing large.  Note that we do not consider the weight values themselves in this calculation; doing so would require handling dimensionality changes (i.e. with reversible jump MCMC \cite{green1995reversible}).  And it would require some judgement or heuristic a priori about how the weights should change, \emph{independent of the training process}.  Therefore, we restrict transitions to change by exactly 1 neuron.  In our analysis, we set $p=0.4$ as the growth transition probability.
 
