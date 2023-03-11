@@ -19,7 +19,7 @@
 \usepackage{xcolor}
 \newcommand{\dvb}[1]{\textcolor{teal}{DVB: #1}}  % comments by Danielle
 \newcommand{\crp}[1]{\textcolor{olive}{CRP: #1}} % comments by Cristian
-\newcommand{\xt}[1]{\textcolor{purple}{XT: #1}}     % comments by Xueying
+\newcommand{\xt}[1]{\textcolor{purple}{XT: #1}}  % comments by Xueying
 
 \begin{document}
 \maketitle
@@ -43,11 +43,11 @@ Training a cooperative set of weak models (i.e. an ensemble of small models) rat
 
 Seeking even better methods, some researchers have attempted to combine tree-based and NN-based approaches.  For instance, Neural Random Forests \cite{biau2019neural}, builds NNs that are numerically equivalent to RFs, and then continues to train them as though they were newly initialized networks.  Recent research \cite{vanboxel2021neural}, however, suggests creating neural networks this way may not significantly improve performance over both similarly parametrized RFs and NNs.  Another attempted hybridization is Neural Decision Trees \cite{balestriero2017neural}, which replaces the splitting function in trees with neural networks.
 
-\dvb{inject motivation concepts here?}
+These direct hydridizations, however, may not completely meet some key objectives in modeling a regression task.  When using a neural network, for example, a fundamental problem is determining the network architecture (e.g. number of neurons, number of layers, type of activation functions) \cite{elsken2019neural}.  In particular, an ideal approach would enable researchers to specify not exact hyperparameters, but \emph{distributions} of hyperparameters.  This naturally suggests a fully Bayesian framework, such as type used in BART and bayesian decision trees \cite{chipman1998bayesian}.  Their analysis, however, is particular to decision trees; we adapt it to other model types such as neural networks.  We do this, in part, for the general goal of broad model applicability.  For example, ordinary least squares (OLS) may be unsuitable for modeling inherently non-linear relationships between explanatory and target variables.  While decision trees are broadly applicable \cite{breiman1984classification}, this may not be realizable in a reasonable model.  Neural networks, on the other hand, have shown considerable capability in many fields, especially those where other methods perform poorly \cite{schmidhuber2015deep} such as computer vision.  Applying a bayesian architecture search to an ensemble of neural networks may simultaneously address all of these concerns.
 
-Rather than copy an existing ensembling approach exactly into neural networks \cite[for example]{biau2019neural}, we instead adapt the conditional Monte Carlo Markov Chain (MCMC) learning process of BART \cite{chipman2010bart} to an ensemble of neural network architectures.  That is, we train a series of NNs, each one on the residual of the target value and the summed prediction of the remaining NNs.  We further condition acceptance of a model following the Bayes CART method \cite{chipman1998bayesian}.  This sampling procedure of Bayesian Additive Regression Networks (BARN) generalizes the BART method to a new model type.  Further, the procedure encapsulates both training and neural architecture search into a bayesian framework (rather than generic search as in some studies \cite{idrissi2016genetic}).  We describe this in more detail in \autoref{sec:method}.
+Rather than copy an existing ensembling approach exactly into neural networks \cite[for example]{biau2019neural}, we instead adapt the conditional Monte Carlo Markov Chain (MCMC) learning process of BART \cite{chipman2010bart} to an ensemble of neural network architectures.  That is, we train a series of NNs, each one on the residual of the target value and the summed prediction of the remaining NNs.  We further condition acceptance of a model following the Bayes CART method \cite{chipman1998bayesian}.  This sampling procedure of Bayesian Additive Regression Networks (BARN) generalizes the BART method to a new model type.  Further, the procedure encapsulates both training and neural architecture search into a bayesian framework (rather than generic search as in some studies \cite{idrissi2016genetic}).  We describe this in more detail in \autoref{sec:method}, calling our approach ``BARN'' for Bayesian Additive Regression Network.
 
-\dvb{Describe need to have a software library to ensure usability by data science practicitioners.  Cite studies that have libs along with them?  Is there a meta study on this?}
+In addition to explaining the statistical details, we also make available a complete code implementation.  As Vandewalle \cite{vandewalle2012code} notes, reimplementing research papers in code is rare straightforward.  By including a fully functioning library, we aim to ease this process and improve accessibility.  For this reason, we write our BARN algorithm using the Python programming language \cite{van1995python} in the style of SciKit-Learn \cite{scikit-learn}, an easy-to-use machine learning library.  Further, by tracking software development with Git version control \cite{chacon2014pro}, we can quickly integrate updates, both of our own and from the wider research community.  Thus everyone can deploy adaptable BARN models from an adaptable software codebase.
 
 To evaluate the effectiveness of this approach, we apply BARN to a variety of benchmark data sets \cite{Dua:2019} as used in the Neural Random Forests \cite{biau2019neural} study.  We also examine a more recent ecological data set \cite{roman2022bayclump}.  To limit computation time, we restrict our analysis to prototype size (mean 4 neurons) and number networks (fixed at 10) in the ensemble.  We additionally train, however, equivalent sized (to the entire ensemble) NNs and equivalent-count BART forests (i.e. 10 decision trees) for comparison.  We find that BARN, though expensive (in its current implementation), is able to reliably match or beat performance of both alternatives.  It is robust to different modeling problems, even when it does not produce the most accurate result, it was always close, and never the worst performing model.
 
@@ -193,8 +193,6 @@ Finally, we need an expression for the conditional probability of the target giv
 $$
 P(R_k|X,M_k) \approx \prod_{i \in \text{valid}} \frac{e^{-\frac{1}{2}\left(\frac{(R_k-M_k(X_i))}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}
 $$
-
-\dvb{quickly mention/show that we can use the residual as replacement of non-current componeents, then gibbs sample}
 
 Recall that these residuals are sufficient (in fact, exactly equal to) to replace the contribution from all of the frozen models in the ensemble.  So when we fix those and subtract the effect using the residuals, we are implementing a form of Gibbs' sampling.  That is, we are approximating $P(Y|X,M_1,M_2,\cdots)$ as in \cite{chipman2010bart} (i.e. the entire distribution given all the models, not just the particular model).  
 
@@ -369,11 +367,12 @@ We introduce and demonstrate the effectiveness of a new model ensemble technique
 \begin{itemize}
 \item \dvb{Summer 2023: Improve implementation speed}
 \item \dvb{Summer 2023: Study BART benchmarking/data sets}
+\item \dvb{Autumn 2023: Additional Mathematical Rigor}
 \item \dvb{Autumn 2023: Explore SVM}
 \item \dvb{Autumn 2023: Classification example}
 \item \dvb{Autumn 2023: Dissertation background and lit review sections}
 \item \dvb{Spring 2024: Dissertation integration and code polishing}
-\item \dvb{May 2024: Defense?}
+\item \dvb{April/May 2024: Defense?}
 \end{itemize}
 
 Risks/mitigations:
