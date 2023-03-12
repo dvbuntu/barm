@@ -202,3 +202,9 @@ Maybe fix slide 9, no power of K?  double check this, if even needed at all.
 # 25 Feb 2023
 
 Rebuilding comps paper from manuscript.  Add notes about sections/details to add like schedule and things from last meeting.
+
+# 11 Mar 2023
+
+(previously worked on tutorial and paper updates)
+
+Put together BARN motivation better now.  Fill in remaining comments about data science, prior and bits.  Leaving comments in future work to get feedback.
